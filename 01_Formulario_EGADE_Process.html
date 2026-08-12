@@ -1,0 +1,968 @@
+<script runat = "server" >
+    Platform.Load("core","1");
+    try{
+</script>
+%%[
+    /* Variables persona enlace */
+    var @PersonaEnlaceRows, @PersonaEnlaceRow, @PersonaEnlace_Id, @EstudianteRows, @EstudianteRow, @Estudiante_Id, @deDestino
+
+    /* Variables llamadas API */
+    var @customerKey, @credentialsRows, @credentialsRow, @accessToken, @expirationTokenDate, @client_id, @client_secret, @account_id, @subdomain, @Now, @codeAPI
+    
+    /* Variables persona a comunicar */
+    var @Id_PersonaComunicar, @FirstName_PersonaComunicar, @LastName_PersonaComunicar, @Phone_PersonaComunicar, @Locale_PersonaComunicar, @ChannelId, @Email_PersonaComunicar, @Rows_PersonaComunicar, @Row_PersonaComunicar, @tyURL, @Estudiante_FechaNacimiento, @Estudiante_FechaNacimiento_Formatted
+
+    /* Cosntantes */
+    /* Data Extensions */
+    var @deRespuestas
+
+    set @deEGADE = "PRE_Respuestas_Formularios_EGADE"
+    set @deHistorialDeCampania = " Historial_Campania_Formularios_EGADE_v1"
+    set @deCampanas_UTM = "Campanas_UTM"
+    set @deUtmSource_Medio = "Catalogo_utm_source_medio"
+    /* Constantes EGADE y Profesional */
+    var @errorURL
+    set @adm_wl_clave_nivel_EGADE = "08"
+    set @ChannelId_EGADE = "5215560780547"
+    set @ChannelId_Profesional = "5215560776872"
+    set @errorURL_EGADE = "https://prepa.admisiones.tec.mx/formulario-error-tec-mx"
+    set @errorURL_Profesional = "https://profesional.admisiones.tec.mx/formulario-error-tec-mx"
+    /* Constantes formulario */
+    set @Origen = "TecMX"
+    set @Validado = "Call Center"
+    set @perfilResponsableLegal = "Estudiante"
+    set @Submit_Date = Now()
+    set @Descartado = "Descartado"
+    /* Test strings */
+    SET @testString = "test"
+    SET @orangeDomainString = "@orangedcx"
+    SET @cajaAzulEmailString = "cajaazul"
+    
+    /* Credenciales API y API Definition Key */
+    var @eventDefinitionKey, @automationKey
+    set @customerKey = "API_Journey_Triggers_EGADE_y_Profe"
+    set @eventDefinitionKeyEntry_EGADE = "APIEvent-d3b47c26-365f-6b02-9180-949891939ec6"
+    set @eventDefinitionKeyEntry_Profesional = "APIEvent-f8a1142d-e987-dfca-70c6-e1e27eac0d7e"
+    set @automationKey_EGADE = '5dbef217-c7fa-0d94-6f2a-781943c5c39d'
+    //set @automationKey_Profesional = '5dbef217-c7fa-0d94-6f2a-781943c5c39d'
+    
+    /* Valores formulario */
+    set @Estudiante_FirstName = Trim(ProperCase(RequestParameter("Estudiante_FirstName")))
+    set @Estudiante_ApellidoPaterno = Trim(ProperCase(RequestParameter("Estudiante_ApellidoPaterno")))
+    set @Estudiante_ApellidoMaterno = Trim(ProperCase(RequestParameter("Estudiante_ApellidoMaterno")))
+    set @Estudiante_FechaNacimiento = RequestParameter("Estudiante_FechaNacimiento")
+    set @Estudiante_Email = Lowercase(RequestParameter("Estudiante_Email"))
+    set @Estudiante_Phone = Replace(Concat(RequestParameter("PREFIJO_CELULAR"), RequestParameter("Estudiante_Phone")), " ", "")
+    set @prefijo = RequestParameter("PREFIJO_CELULAR")
+    set @Estudiante_CodePhone = RequestParameter("Estudiante_CodePhone")
+    set @universidad_graduacion = RequestParameter("Universidad_Graduacion")
+    set @anios_profesional = RequestParameter("a_os_graduacion")
+    set @carrera = RequestParameter("area_de_interes_pivote")
+    set @periodo = RequestParameter("periodo_de_interes_pivote")
+    set @campus = RequestParameter("campus_de_interes_pivote")
+    set @programa = RequestParameter("programa_de_interes_pivote")
+    set @Horario_Contacto = RequestParameter("Horario_Contacto")
+    set @sexo_legal = RequestParameter("Estudiante_SexoLegal")
+    set @aos_laborados_en_gerencia_alta_o_superior = RequestParameter("aos_laborados_en_gerencia_alta_o_superior")
+    set @Rol_Empresarial = RequestParameter("Rol_Empresarial")
+    set @Empresa_Institucionalizacion = RequestParameter("Empresa_Institucionalizacion")
+    set @Tamano_Empresa = RequestParameter("Tamano_Empresa")
+    set @Medio_Contacto = RequestParameter("Medio_Contacto")
+    set @Tipo_Formulario = RequestParameter("Tipo_Formulario")
+    set @puesto = RequestParameter("puesto")
+    set @empresa = RequestParameter("Empresa")
+    set @programaClave = RequestParameter("Programa_ClaveBanner")
+    set @periodoClave = RequestParameter("Periodo_Clave")
+    set @sedeClave = RequestParameter("Sede_Clave")
+    set @nivelIngles = RequestParameter("Estudiante_NivelIngles")
+    set @agrupacionClave = RequestParameter("Agrupacion_Clave")
+    set @submitParam = RequestParameter("submit")
+    set @submitBool = IIF(Lowercase(@submitParam) == "true", "true", "false")
+
+    set @EGADE_periodo_de_interes_pivote = RequestParameter("EGADE_periodo_de_interes_pivote")
+    set @EGADE_de_interes_pivote = RequestParameter("EGADE_de_interes_pivote")
+    set @EGADE_programa_de_interes_pivote = RequestParameter("EGADE_programa_de_interes_pivote")
+    set @utm_campaign = RequestParameter("utm_campaign")
+    set @utm_source = Lowercase(Trim(RequestParameter("utm_source")))
+    set @utm_medium = RequestParameter("utm_medium")
+    set @utm_term = RequestParameter("utm_term")
+    set @utm_content = RequestParameter("utm_content")
+    set @utm_cve_periodo_iniciativa = RequestParameter("utm_cve_periodo_iniciativa")
+    set @utm_cve_sede_iniciativa = RequestParameter("utm_cve_sede_iniciativa")
+    set @adm_url_landing__c = RequestParameter("adm_url_landing__c")
+    set @business_unit__pivote_ = RequestParameter("business_unit__pivote_")
+    set @adm_wl_clave_origen__c = RequestParameter("adm_wl_clave_origen__c")
+    set @adm_wl_clave_estatus__c = RequestParameter("adm_wl_clave_estatus__c")
+    set @adm_sistema_origen__c = RequestParameter("adm_sistema_origen__c")
+    set @adm_modalidad__c = RequestParameter("adm_modalidad__c")
+    set @adm_wl_clave_nivel__c = RequestParameter("adm_wl_clave_nivel__c")
+    set @area_de_interes_pivote = RequestParameter("area_de_interes_pivote")
+    set @aviso_privacidad = 1
+    set @comunicacion_whatsapp = RequestParameter("comunicacion_whatsapp")
+    set @OptOutStatusID = IIf(@comunicacion_whatsapp == 1, 0, 1)
+
+    set @Evento_Name = RequestParameter("Evento_Name")
+    set @Evento_EventKey = RequestParameter("Evento_EventKey")
+    var @medio, @isTest
+    
+      IF @prefijo == "1" THEN
+        SET @Estudiante_Locale = "US"
+      ELSEIF @prefijo == "7" THEN
+        SET @Estudiante_Locale = "RU"
+      ELSEIF @prefijo == "20" THEN
+        SET @Estudiante_Locale = "EG"
+      ELSEIF @prefijo == "27" THEN
+        SET @Estudiante_Locale = "ZA"
+      ELSEIF @prefijo == "30" THEN
+        SET @Estudiante_Locale = "GR"
+      ELSEIF @prefijo == "31" THEN
+        SET @Estudiante_Locale = "NL"
+      ELSEIF @prefijo == "32" THEN
+        SET @Estudiante_Locale = "BE"
+      ELSEIF @prefijo == "33" THEN
+        SET @Estudiante_Locale = "FR"
+      ELSEIF @prefijo == "34" THEN
+        SET @Estudiante_Locale = "ES"
+      ELSEIF @prefijo == "36" THEN
+        SET @Estudiante_Locale = "HU"
+      ELSEIF @prefijo == "39" THEN
+        SET @Estudiante_Locale = "IT"
+      ELSEIF @prefijo == "40" THEN
+        SET @Estudiante_Locale = "RO"
+      ELSEIF @prefijo == "41" THEN
+        SET @Estudiante_Locale = "CH"
+      ELSEIF @prefijo == "43" THEN
+        SET @Estudiante_Locale = "AT"
+      ELSEIF @prefijo == "44" THEN
+        SET @Estudiante_Locale = "UK"
+      ELSEIF @prefijo == "45" THEN
+        SET @Estudiante_Locale= "DK"
+      ELSEIF @prefijo == "46" THEN
+        SET @Estudiante_Locale = "SE"
+      ELSEIF @prefijo == "47" THEN
+        SET @Estudiante_Locale = "NO"
+      ELSEIF @prefijo == "48" THEN
+        SET @Estudiante_Locale = "PL"
+      ELSEIF @prefijo == "49" THEN
+        SET @Estudiante_Locale = "DE"
+      ELSEIF @prefijo == "51" THEN
+        SET @Estudiante_Locale= "PE"
+      ELSEIF @prefijo == "52" THEN
+        SET @Estudiante_Locale = "MX"
+      ELSEIF @prefijo == "53" THEN
+        SET @Estudiante_Locale = "CU"
+      ELSEIF @prefijo == "54" THEN
+        SET @Estudiante_Locale = "AR"
+      ELSEIF @prefijo == "55" THEN
+        SET @Estudiante_Locale = "BR"
+      ELSEIF @prefijo == "56" THEN
+        SET @Estudiante_Locale = "CL"
+      ELSEIF @prefijo == "57" THEN
+        SET @Estudiante_Locale = "CO"
+      ELSEIF @prefijo == "58" THEN
+        SET @Estudiante_Locale = "VE"
+      ELSEIF @prefijo == "60" THEN
+        SET @Estudiante_Locale = "MY"
+      ELSEIF @prefijo== "61" THEN
+        SET @Estudiante_Locale = "AU"
+      ELSEIF @prefijo == "62" THEN 
+        SET @Estudiante_Locale = "ID"
+      ELSEIF @prefijo == "63" THEN
+        SET @Estudiante_Locale = "PH"
+      ELSEIF @prefijo  == "64" THEN
+        SET @Estudiante_Locale = "NZ"
+      ELSEIF @prefijo  == "65" THEN
+        SET @Estudiante_Locale = "SG"
+      ELSEIF @prefijo  == "66" THEN
+        SET @Estudiante_Locale = "TH"
+      ELSEIF @prefijo  == "81" THEN
+        SET @Estudiante_Locale = "JP"
+      ELSEIF @prefijo  == "82" THEN
+        SET @Estudiante_Locale = "KR"
+      ELSEIF @prefijo  == "84" THEN
+        SET @Estudiante_Locale = "VN"
+      ELSEIF @prefijo  == "86" THEN
+        SET @Estudiante_Locale = "CN"
+      ELSEIF @prefijo  == "90" THEN
+        SET @Estudiante_Locale = "TR"
+      ELSEIF @prefijo  == "91" THEN
+        SET @Estudiante_Locale = "IN"
+      ELSEIF @prefijo  == "92" THEN
+        SET @Estudiante_Locale = "PK"
+      ELSEIF @prefijo  == "93" THEN
+        SET @Estudiante_Locale = "AF"
+      ELSEIF @prefijo  == "94" THEN
+        SET @Estudiante_Locale = "LK"
+      ELSEIF @prefijo  == "95" THEN
+        SET @Estudiante_Locale = "MM"
+      ELSEIF @prefijo  == "98" THEN
+        SET @Estudiante_Locale = "IR"
+      ELSEIF @prefijo  == "212" THEN
+        SET @Estudiante_Locale = "MA"
+      ELSEIF @prefijo  == "213" THEN
+        SET @Estudiante_Locale = "DZ"
+      ELSEIF @prefijo  == "220" THEN
+        SET @Estudiante_Locale = "GM"
+      ELSEIF @prefijo  == "221" THEN
+        SET @Estudiante_Locale = "SN"
+      ELSEIF @prefijo  == "223" THEN
+        SET @Estudiante_Locale = "ML"
+      ELSEIF @prefijo  == "226" THEN
+        SET @Estudiante_Locale = "BF"
+      ELSEIF @prefijo  == "229" THEN
+        SET @Estudiante_Locale = "BJ"
+      ELSEIF @prefijo  == "233" THEN
+        SET @Estudiante_Locale = "GH"
+      ELSEIF @prefijo  == "234" THEN
+        SET @Estudiante_Locale = "NG"
+      ELSEIF @prefijo  == "241" THEN
+        SET @Estudiante_Locale = "GA"
+      ELSEIF @prefijo  == "244" THEN
+        SET @Estudiante_Locale = "AO"
+      ELSEIF @prefijo  == "251" THEN
+        SET @Estudiante_Locale = "ET"
+      ELSEIF @prefijo  == "254" THEN
+        SET @Estudiante_Locale = "KE"
+      ELSEIF @prefijo  == "255" THEN
+        SET @Estudiante_Locale = "TZ"
+      ELSEIF @prefijo  == "257" THEN
+        SET @Estudiante_Locale = "BI"
+      ELSEIF @prefijo  == "258" THEN
+        SET @Estudiante_Locale = "MZ"
+      ELSEIF @prefijo  == "260" THEN
+        SET @Estudiante_Locale = "ZM"
+      ELSEIF @prefijo == "261" THEN
+        SET @Estudiante_Locale = "MG"
+      ELSEIF @prefijo  == "263" THEN
+        SET @Estudiante_Locale = "ZW"
+      ELSEIF @prefijo  == "264" THEN
+        SET @Estudiante_Locale = "NA"
+      ELSEIF @prefijo  == "267" THEN
+        SET @Estudiante_Locale = "BW"
+      ELSEIF @prefijo  == "291" THEN
+        SET @Estudiante_Locale = "ER"
+      ELSEIF @prefijo  == "297" THEN
+        SET @Estudiante_Locale = "AW"
+      ELSEIF @prefijo  == "351" THEN
+        SET @Estudiante_Locale = "PT"
+      ELSEIF @prefijo  == "352" THEN
+        SET @Estudiante_Locale = "LU"
+      ELSEIF @prefijo  == "353" THEN
+        SET @Estudiante_Locale = "IE"
+      ELSEIF @prefijo  == "355" THEN
+        SET @Estudiante_Locale = "AL"
+      ELSEIF @prefijo  == "356" THEN
+        SET @Estudiante_Locale = "MT"
+      ELSEIF @prefijo  == "358" THEN
+        SET @Estudiante_Locale = "FI"
+      ELSEIF @prefijo  == "359" THEN
+        SET @Estudiante_Locale = "BG"
+      ELSEIF @prefijo  == "370" THEN
+        SET @Estudiante_Locale = "LT"
+      ELSEIF @prefijo  == "371" THEN
+        SET @Estudiante_Locale = "LV"
+      ELSEIF @prefijo  == "372" THEN
+        SET @Estudiante_Locale = "EE"
+      ELSEIF @prefijo  == "373" THEN
+        SET @Estudiante_Locale = "MD"
+      ELSEIF @prefijo  == "374" THEN
+        SET @Estudiante_Locale = "AM"
+      ELSEIF @prefijo == "375" THEN
+        SET @Estudiante_Locale = "BY"
+      ELSEIF @prefijo == "376" THEN
+        SET @Estudiante_Locale = "AD"
+      ELSEIF @prefijo == "377" THEN
+        SET @Estudiante_Locale = "MC"
+      ELSEIF @prefijo == "380" THEN
+        SET @Estudiante_Locale = "UA"
+      ELSEIF @prefijo == "385" THEN
+        SET @Estudiante_Locale = "HR"
+      ELSEIF @prefijo == "386" THEN
+        SET @Estudiante_Locale = "SI"
+      ELSEIF @prefijo == "387" THEN
+        SET @Estudiante_Locale = "BA"
+      ELSEIF @prefijo == "421" THEN
+        SET @Estudiante_Locale = "SK"
+      ELSEIF @prefijo == "501" THEN
+        SET @Estudiante_Locale = "BZ"
+      ELSEIF @prefijo == "502" THEN
+        SET @Estudiante_Locale = "GT"
+      ELSEIF @prefijo == "503" THEN
+        SET @Estudiante_Locale = "SV"
+      ELSEIF @prefijo == "504" THEN
+        SET @Estudiante_Locale = "HN"
+      ELSEIF @prefijo == "505" THEN
+        SET @Estudiante_Locale = "NI"
+      ELSEIF @prefijo == "506" THEN
+        SET @Estudiante_Locale = "CR"
+      ELSEIF @prefijo == "507" THEN
+        SET @Estudiante_Locale = "PA"
+      ELSEIF @prefijo == "509" THEN
+        SET @Estudiante_Locale = "HT"
+      ELSEIF @prefijo == "591" THEN
+        SET @Estudiante_Locale = "BO"
+      ELSEIF @prefijo == "593" THEN
+        SET @Estudiante_Locale = "EC"
+      ELSEIF @prefijo == "595" THEN
+        SET @Estudiante_Locale = "PY"
+      ELSEIF @prefijo == "598" THEN
+        SET @Estudiante_Locale = "UY"
+      ELSEIF @prefijo == "599" THEN
+        SET @Estudiante_Locale = "CW"
+      ELSEIF @prefijo == "672" THEN
+        SET @Estudiante_Locale = "AQ"
+      ELSEIF @prefijo == "673" THEN
+        SET @Estudiante_Locale = "BN"
+      ELSEIF @prefijo == "853" THEN
+        SET @Estudiante_Locale = "MO"
+      ELSEIF @prefijo == "880" THEN
+        SET @Estudiante_Locale = "BD"
+      ELSEIF @prefijo == "886" THEN
+        SET @Estudiante_Locale = "TW"
+      ELSEIF @prefijo == "961" THEN
+        SET @Estudiante_Locale = "LB"
+      ELSEIF @prefijo == "962" THEN
+        SET @Estudiante_Locale = "JO"
+      ELSEIF @prefijo == "964" THEN
+        SET @Estudiante_Locale = "IQ"
+      ELSEIF @prefijo == "965" THEN
+        SET @Estudiante_Locale = "KW"
+      ELSEIF @prefijo == "966" THEN
+        SET @Estudiante_Locale = "SA"
+      ELSEIF @prefijo == "967" THEN
+        SET @Estudiante_Locale = "YE"
+      ELSEIF @prefijo == "971" THEN
+        SET @Estudiante_Locale = "AE"
+      ELSEIF @prefijo == "972" THEN
+        SET @Estudiante_Locale = "IL"
+      ELSEIF @prefijo == "973" THEN
+        SET @Estudiante_Locale = "BH"
+      ELSEIF @prefijo == "974" THEN
+        SET @Estudiante_Locale = "QA"
+      ELSEIF @prefijo == "975" THEN
+        SET @Estudiante_Locale = "BT"
+      ELSEIF @prefijo == "976" THEN
+        SET @Estudiante_Locale = "MN"
+      ELSEIF @prefijo == "977" THEN
+        SET @Estudiante_Locale = "NP"
+      ELSEIF @prefijo == "994" THEN
+        SET @Estudiante_Locale = "AZ"
+      ELSEIF @prefijo == "995" THEN
+        SET @Estudiante_Locale = "GE"
+      ELSEIF @prefijo == "998" THEN
+        SET @Estudiante_Locale = "UZ"
+      ELSEIF @prefijo == "1242" THEN
+        SET @Estudiante_Locale = "BS"
+      ELSEIF @prefijo == "1246" THEN
+        SET @Estudiante_Locale = "BB"
+      ELSEIF @prefijo == "1264" THEN
+        SET @Estudiante_Locale = "AI"
+      ELSEIF @prefijo == "1268" THEN
+        SET @Estudiante_Locale = "AG"
+      ELSEIF @prefijo == "1441" THEN
+        SET @Estudiante_Locale = "BM"
+      ELSE
+        SET @Estudiante_Locale = "NA"
+      ENDIF
+
+  
+
+    /* IsTest */
+    IF  
+        IndexOf(Lowercase(@PersonaEnlace_FirstName), @testString) > 0 OR 
+        IndexOf(Lowercase(@PersonaEnlace_ApellidoPaterno), @testString) > 0 OR 
+        IndexOf(Lowercase(@PersonaEnlace_Email), @testString) > 0 OR 
+        IndexOf(Lowercase(@PersonaEnlace_Email), @orangeDomainString) > 0 OR 
+        IndexOf(Lowercase(@PersonaEnlace_Email), @cajaAzulEmailString) > 0 OR 
+        IndexOf(Lowercase(@Estudiante_FirstName), @testString) > 0 OR 
+        IndexOf(Lowercase(@Estudiante_ApellidoPaterno), @testString) > 0 OR 
+        IndexOf(Lowercase(@Estudiante_Email), @testString) > 0 OR 
+        IndexOf(Lowercase(@Estudiante_Email), @orangeDomainString) > 0 OR
+        IndexOf(Lowercase(@Estudiante_Email), @cajaAzulEmailString) > 0
+    THEN
+        SET @isTest = 1
+    ELSE
+        SET @isTest = 0
+    ENDIF
+    /* Termina IsTest */
+    
+    /* Normalizacion de utm vacias y catalogos */
+    if Empty(@utm_campaign) then
+        set @utm_campaign = "OREG"
+    endif
+
+    if Empty(@utm_source) then 
+        set @utm_source = 'organico'
+        set @medio = 'OR'
+        SET @utm_content = "ORGANICO_EGADE"
+        SET @utm_medium = "organic"
+    else
+        set @utmSource_Rows = LookupRows(@deUtmSource_Medio, "utm_source", @utm_source)
+        /* Existe utm_source y el valor se encuentra dentro del catalogo */
+        if RowCount(@utmSource_Rows) > 0 then
+            set @utmSource_Row = Row(@utmSource_Rows, 1)
+            set @medio = Field(@utmSource_Row, "Medio")
+        else
+            /* Existe utm_source y el valor no se encuentra dentro del catalogo */
+            set @medio = "ZZ"
+        endif
+    endif
+    /* Termina: Normalizacion de utm vacias y catalogos */
+
+
+    /* DE destino dependiendo del nivel EGADE o Profesional */
+    
+     set @deDestino =  @deEGADE
+     //set @tyURL = @tyURL_EGADE
+     set @eventDefinitionKey = @eventDefinitionKeyEntry_EGADE
+     set @automationKey = @automationKey_EGADE
+     set @errorURL = @errorURL_EGADE
+     set @deRespuestas = @deEGADE
+     /*
+    if @adm_wl_clave_nivel__c == @adm_wl_clave_nivel_EGADE then
+        set @deDestino =  @deEGADE
+        set @tyURL = @tyURL_EGADE
+        set @eventDefinitionKey = @eventDefinitionKeyEntry_EGADE
+        set @automationKey = @automationKey_EGADE
+        set @errorURL = @errorURL_EGADE
+        set @deRespuestas = @deRespuestas_EGADE
+    else
+        set @deDestino = @deProfesional
+        set @tyURL = @tyURL_Profesional
+        set @eventDefinitionKey = @eventDefinitionKeyEntry_Profesional
+        set @automationKey = @automationKey_Profesional
+        set @errorURL = @errorURL_Profesional
+        set @deRespuestas = @deRespuestas_Profesional
+    endif
+    */
+
+    /* Procesamiento del CRM y Caja Azul*/
+    if @perfil == @perfilResponsableLegal then
+        set @PersonaEnlaceRows = LookupRows(@deDestino, "Estudiante_Email", @Estudiante_Email)
+        if RowCount(@PersonaEnlaceRows) > 0 then
+            set @PersonaEnlaceRow = Row(@PersonaEnlaceRows, 1)
+            set @PersonaEnlace_Id = Field(@PersonaEnlaceRow, "PersonaEnlace_Id")
+        else 
+            set @PersonaEnlace_Id = Substring(GUID(), 1)
+        endif
+    endif
+    /* Termina procesamiento CRM */
+
+    /* Busqueda Estudiante */
+    set @EstudianteRows = LookupRows(@deDestino, "Estudiante_Email", @Estudiante_Email, "programa_de_interes_pivote", @programa)
+
+    if RowCount(@EstudianteRows) > 0 then
+        set @EstudianteRow = Row(@EstudianteRows, 1)
+        set @Estudiante_Id = Field(@EstudianteRow, "Estudiante_Id")
+    else 
+        set @Estudiante_Id = Substring(GUID(), 1)
+    endif
+  /* Termina Busqueda Estudiante */
+
+
+    /* Asignacion Id_PersonaComunicar (Subscriptor de WhatsApp) */
+    
+        set @Id_PersonaComunicar = @Estudiante_Id
+        set @FirstName_PersonaComunicar = @Estudiante_FirstName
+        set @LastName_PersonaComunicar = Concat(@Estudiante_ApellidoPaterno, " ", @Estudiante_ApellidoMaterno)
+        set @Email_PersonaComunicar = @Estudiante_Email
+        set @Phone_PersonaComunicar = @Estudiante_Phone
+        set @Locale_PersonaComunicar = @Estudiante_Locale
+        set @ChannelId = @ChannelId_EGADE
+    /* Termina Asignacion Id_PersonaComunicar (Subscriptor de WhatsApp) */
+
+    /* Busca si la persona a comunicar ya se registro y si esta en proceso de validación, de ser verdadero se genera un Historial de Campaña */
+    set @esDescartado = 0 
+    set @Rows_PersonaComunicar = LookupOrderedRows(@deRespuestas, 0, "Submit_Date asc", "Id_PersonaComunicar", @Id_PersonaComunicar)
+    for @i = 1 to RowCount(@Rows_PersonaComunicar) do
+        set @Row_PersonaComunicar = Row(@Rows_PersonaComunicar, @i)
+        set @preaviousValidado = Field(@Row_PersonaComunicar, "Validado")
+
+        if @preaviousValidado == @Descartado then
+            set @esDescartado = 1
+        elseif @preaviousValidado != @Descartado then
+            set @esDescartado = 0
+        endif
+    next @i
+    /* Busca si no se ha generado un registro en una ventana de una hora*/
+   
+    set @esDuplicado = 0 
+    set @Rows_PersonaDuplicada = LookupOrderedRows(@deDestino, 0, "Submit_Date desc", "Id_PersonaComunicar", @Id_PersonaComunicar)
+    if RowCount(@Rows_PersonaDuplicada) > 0 then
+        set @Row_PersonaDuplicada = Row(@Rows_PersonaDuplicada, 1)
+        set @preavious_Submit_Date = Field(@Row_PersonaDuplicada, "Submit_Date")
+        set @minute_diff = DateDiff(@Submit_Date, @preavious_Submit_Date, "MI")
+        set @esDuplicado = IIf(@minute_diff > 60, 0, 1)
+    endif
+    
+    set @historialRows = LookupRows(@deDestino, "Estudiante_Email", @Estudiante_Email)
+    set @intentos = RowCount(@historialRows)
+    
+    
+    if (RowCount(@Rows_PersonaComunicar) == 0 OR @esDescartado == 1) AND @esDuplicado == 0 then 
+         if @submitBool == "True" then
+          set @upsertCount = UpsertData(@deDestino, 2, 
+                                      "Id_PersonaComunicar", @Id_PersonaComunicar,
+                                      "Submit_Date", @Submit_Date,
+                                      "perfil", @perfilResponsableLegal,
+                                      "Horario_Contacto", @Horario_Contacto,
+                                      "aviso_privacidad", @aviso_privacidad,
+                                      "comunicacion_whatsapp", @comunicacion_whatsapp,
+                                      "Estudiante_Id", @Estudiante_Id,
+                                      "Estudiante_FirstName", @Estudiante_FirstName,
+                                      "Estudiante_ApellidoPaterno", @Estudiante_ApellidoPaterno,
+                                      "Estudiante_ApellidoMaterno", @Estudiante_ApellidoMaterno,
+                                      "Estudiante_FechaNacimiento", @Estudiante_FechaNacimiento,
+                                      "Estudiante_FechaNacimiento_Formatted", @Estudiante_FechaNacimiento,
+                                      "Estudiante_Email", @Estudiante_Email,
+                                      "Estudiante_Phone", @Estudiante_Phone,
+                                      "Estudiante_Locale", @Estudiante_Locale,
+                                      "Estudiante_CodePhone", @Estudiante_CodePhone,
+                                      "nivel_de_ingles", @nivelIngles, 
+                                      "utm_campaign", @utm_campaign,
+                                      "utm_source", @utm_source,
+                                      "utm_term", @utm_term,
+                                      "utm_content", @utm_content,
+                                      "adm_url_landing__c", @adm_url_landing__c,
+                                      "business_unit__pivote_", @business_unit__pivote_,
+                                      "adm_wl_clave_origen__c", @adm_wl_clave_origen__c,
+                                      "adm_wl_clave_estatus__c", @adm_wl_clave_estatus__c,
+                                      "adm_sistema_origen__c", @adm_sistema_origen__c,
+                                      "adm_modalidad__c", @adm_modalidad__c,
+                                      "adm_wl_clave_nivel__c", @adm_wl_clave_nivel__c,
+                                      "Origen", @Origen,
+                                      "Validado", @Validado,
+                                      "OptOutStatusID", @OptOutStatusID,
+                                      "utm_cve_periodo_iniciativa", @utm_cve_periodo_iniciativa,
+                                      "utm_medium", @utm_medium,
+                                      "utm_cve_sede_iniciativa", @utm_cve_sede_iniciativa,
+                                      "Medio", @medio,
+                                      "IsTest", @IsTest,
+                                      "periodo_futuro", @periodo_futuro,
+                                      "Universidad_Graduacion", @universidad_graduacion,
+                                      "a_os_graduacion", @anios_profesional,
+                                      "area_de_interes_pivote", @carrera,
+                                      "periodo_de_interes_pivote", @periodo,
+                                      "campus_de_interes_pivote", @campus,
+                                      "programa_de_interes_pivote", @programa,
+                                      "Programa_ClaveBanner", @programaClave,
+                                      "Periodo_Clave", @periodoClave,
+                                      "Sede_Clave", @sedeClave,
+                                      "Agrupacion_Clave", @agrupacionClave,
+                                      "Tipo_Formulario", @Tipo_Formulario,
+                                      "Puesto", @puesto,
+                                      "Empresa", @empresa,
+                                      "Estudiante_SexoLegal", @sexo_legal,
+                                      "aos_laborados_en_gerencia_alta_o_superior", @aos_laborados_en_gerencia_alta_o_superior,
+                                      "Rol_Empresarial", @Rol_Empresarial,
+                                      "Empresa_Institucionalizacion", @Empresa_Institucionalizacion,
+                                      "Tamano_Empresa", @Tamano_Empresa,
+                                      "Medio_Contacto", @Medio_Contacto,
+                                      "valida_datos_submit", @submitBool
+                                    )
+          else
+            set @upsertCount = UpsertData(@deDestino, 2, 
+                                      "Id_PersonaComunicar", @Id_PersonaComunicar,
+                                      "Submit_Date", @Submit_Date, 
+                                      "perfil", @perfilResponsableLegal,
+                                      "Horario_Contacto", @Horario_Contacto,
+                                      "aviso_privacidad", @aviso_privacidad,
+                                      "comunicacion_whatsapp", @comunicacion_whatsapp,
+                                      "Estudiante_Id", @Estudiante_Id,
+                                      "Estudiante_FirstName", @Estudiante_FirstName,
+                                      "Estudiante_ApellidoPaterno", @Estudiante_ApellidoPaterno,
+                                      "Estudiante_ApellidoMaterno", @Estudiante_ApellidoMaterno,
+                                      "Estudiante_FechaNacimiento", @Estudiante_FechaNacimiento,
+                                      "Estudiante_FechaNacimiento_Formatted", @Estudiante_FechaNacimiento,
+                                      "Estudiante_Email", @Estudiante_Email,
+                                      "Estudiante_Phone", @Estudiante_Phone,
+                                      "Estudiante_Locale", @Estudiante_Locale,
+                                      "Estudiante_CodePhone", @Estudiante_CodePhone,
+                                      "nivel_de_ingles", @nivelIngles,
+                                      "utm_campaign", @utm_campaign,
+                                      "utm_source", @utm_source,
+                                      "utm_term", @utm_term,
+                                      "utm_content", @utm_content,
+                                      "adm_url_landing__c", @adm_url_landing__c,
+                                      "business_unit__pivote_", @business_unit__pivote_,
+                                      "adm_wl_clave_origen__c", @adm_wl_clave_origen__c,
+                                      "adm_wl_clave_estatus__c", @adm_wl_clave_estatus__c,
+                                      "adm_sistema_origen__c", @adm_sistema_origen__c,
+                                      "adm_modalidad__c", @adm_modalidad__c,
+                                      "adm_wl_clave_nivel__c", @adm_wl_clave_nivel__c,
+                                      "Origen", @Origen,
+                                      "Validado", @Validado,
+                                      "OptOutStatusID", @OptOutStatusID,
+                                      "utm_cve_periodo_iniciativa", @utm_cve_periodo_iniciativa,
+                                      "utm_medium", @utm_medium,
+                                      "utm_cve_sede_iniciativa", @utm_cve_sede_iniciativa,
+                                      "Medio", @medio,
+                                      "IsTest", @IsTest,
+                                      "periodo_futuro", @periodo_futuro,
+                                      "Universidad_Graduacion", @universidad_graduacion,
+                                      "a_os_graduacion", @anios_profesional,
+                                      "area_de_interes_pivote", @carrera,
+                                      "periodo_de_interes_pivote", @periodo,
+                                      "campus_de_interes_pivote", @campus,
+                                      "programa_de_interes_pivote", @programa,
+                                      "Programa_ClaveBanner", @programaClave,
+                                      "Periodo_Clave", @periodoClave,
+                                      "Sede_Clave", @sedeClave,
+                                      "Agrupacion_Clave", @agrupacionClave,
+                                      "Tipo_Formulario", @Tipo_Formulario,
+                                      "Puesto", @puesto,
+                                      "Empresa", @empresa,
+                                      "Estudiante_SexoLegal", @sexo_legal,
+                                      "aos_laborados_en_gerencia_alta_o_superior", @aos_laborados_en_gerencia_alta_o_superior,
+                                      "Rol_Empresarial", @Rol_Empresarial,
+                                      "Empresa_Institucionalizacion", @Empresa_Institucionalizacion,
+                                      "Tamano_Empresa", @Tamano_Empresa,
+                                      "Medio_Contacto", @Medio_Contacto,
+                                      "Evento_Name", @Evento_Name,
+                                      "Evento_EventKey", @Evento_EventKey
+
+                                    )
+          endif
+
+
+            
+        /* Ejecutar automatizcion: OptIn WhatsApp y evaluacion del Journey */
+]%%
+        %%=ContentBlockbyId(19617)=%%
+%%[
+        /* Termina Ejecutar automatizcion: OptIn WhatsApp y evaluacion del Journey */
+    elseif @preaviousValidado == @Descartado  then
+        if @submitBool == "True" then
+          set @upsertCount = UpsertData(@deDestino, 2, 
+                                      "Id_PersonaComunicar", @Id_PersonaComunicar,
+                                      "Submit_Date", @Submit_Date,
+                                      "perfil", @perfilResponsableLegal,
+                                      "Horario_Contacto", @Horario_Contacto,
+                                      "aviso_privacidad", @aviso_privacidad,
+                                      "comunicacion_whatsapp", @comunicacion_whatsapp,
+                                      "Estudiante_Id", @Estudiante_Id,
+                                      "Estudiante_FirstName", @Estudiante_FirstName,
+                                      "Estudiante_ApellidoPaterno", @Estudiante_ApellidoPaterno,
+                                      "Estudiante_ApellidoMaterno", @Estudiante_ApellidoMaterno,
+                                      "Estudiante_FechaNacimiento", @Estudiante_FechaNacimiento,
+                                      "Estudiante_FechaNacimiento_Formatted", @Estudiante_FechaNacimiento,
+                                      "Estudiante_Email", @Estudiante_Email,
+                                      "Estudiante_Phone", @Estudiante_Phone,
+                                      "Estudiante_Locale", @Estudiante_Locale,
+                                      "Estudiante_CodePhone", @Estudiante_CodePhone,
+                                      "nivel_de_ingles", @nivelIngles,
+                                      "utm_campaign", @utm_campaign,
+                                      "utm_source", @utm_source,
+                                      "utm_term", @utm_term,
+                                      "utm_content", @utm_content,
+                                      "adm_url_landing__c", @adm_url_landing__c,
+                                      "business_unit__pivote_", @business_unit__pivote_,
+                                      "adm_wl_clave_origen__c", @adm_wl_clave_origen__c,
+                                      "adm_wl_clave_estatus__c", @adm_wl_clave_estatus__c,
+                                      "adm_sistema_origen__c", @adm_sistema_origen__c,
+                                      "adm_modalidad__c", @adm_modalidad__c,
+                                      "adm_wl_clave_nivel__c", @adm_wl_clave_nivel__c,
+                                      "Origen", @Origen,
+                                      "Validado", @Validado,
+                                      "OptOutStatusID", @OptOutStatusID,
+                                      "utm_cve_periodo_iniciativa", @utm_cve_periodo_iniciativa,
+                                      "utm_medium", @utm_medium,
+                                      "utm_cve_sede_iniciativa", @utm_cve_sede_iniciativa,
+                                      "Medio", @medio,
+                                      "IsTest", @IsTest,
+                                      "periodo_futuro", @periodo_futuro,
+                                      "Universidad_Graduacion", @universidad_graduacion,
+                                      "a_os_graduacion", @anios_profesional,
+                                      "area_de_interes_pivote", @carrera,
+                                      "periodo_de_interes_pivote", @periodo,
+                                      "campus_de_interes_pivote", @campus,
+                                      "programa_de_interes_pivote", @programa,
+                                      "Programa_ClaveBanner", @programaClave,
+                                      "Periodo_Clave", @periodoClave,
+                                      "Sede_Clave", @sedeClave,
+                                      "Agrupacion_Clave", @agrupacionClave,
+                                      "Tipo_Formulario", @Tipo_Formulario,
+                                      "Puesto", @puesto,
+                                      "Empresa", @empresa,
+                                      "Estudiante_SexoLegal", @sexo_legal,
+                                      "aos_laborados_en_gerencia_alta_o_superior", @aos_laborados_en_gerencia_alta_o_superior,
+                                      "Rol_Empresarial", @Rol_Empresarial,
+                                      "Empresa_Institucionalizacion", @Empresa_Institucionalizacion,
+                                      "Tamano_Empresa", @Tamano_Empresa,
+                                      "Medio_Contacto", @Medio_Contacto,
+                                      "valida_datos_submit", @submitBool
+                                    )
+          else
+            set @upsertCount = UpsertData(@deDestino, 2, 
+                                      "Id_PersonaComunicar", @Id_PersonaComunicar,
+                                      "Submit_Date", @Submit_Date, 
+                                      "perfil", @perfilResponsableLegal,
+                                      "Horario_Contacto", @Horario_Contacto,
+                                      "aviso_privacidad", @aviso_privacidad,
+                                      "comunicacion_whatsapp", @comunicacion_whatsapp,
+                                      "Estudiante_Id", @Estudiante_Id,
+                                      "Estudiante_FirstName", @Estudiante_FirstName,
+                                      "Estudiante_ApellidoPaterno", @Estudiante_ApellidoPaterno,
+                                      "Estudiante_ApellidoMaterno", @Estudiante_ApellidoMaterno,
+                                      "Estudiante_FechaNacimiento", @Estudiante_FechaNacimiento,
+                                      "Estudiante_FechaNacimiento_Formatted", @Estudiante_FechaNacimiento,
+                                      "Estudiante_Email", @Estudiante_Email,
+                                      "Estudiante_Phone", @Estudiante_Phone,
+                                      "Estudiante_Locale", @Estudiante_Locale,
+                                      "Estudiante_CodePhone", @Estudiante_CodePhone,
+                                      "nivel_de_ingles", @nivelIngles,
+                                      "utm_campaign", @utm_campaign,
+                                      "utm_source", @utm_source,
+                                      "utm_term", @utm_term,
+                                      "utm_content", @utm_content,
+                                      "adm_url_landing__c", @adm_url_landing__c,
+                                      "business_unit__pivote_", @business_unit__pivote_,
+                                      "adm_wl_clave_origen__c", @adm_wl_clave_origen__c,
+                                      "adm_wl_clave_estatus__c", @adm_wl_clave_estatus__c,
+                                      "adm_sistema_origen__c", @adm_sistema_origen__c,
+                                      "adm_modalidad__c", @adm_modalidad__c,
+                                      "adm_wl_clave_nivel__c", @adm_wl_clave_nivel__c,
+                                      "Origen", @Origen,
+                                      "Validado", @Validado,
+                                      "OptOutStatusID", @OptOutStatusID,
+                                      "utm_cve_periodo_iniciativa", @utm_cve_periodo_iniciativa,
+                                      "utm_medium", @utm_medium,
+                                      "utm_cve_sede_iniciativa", @utm_cve_sede_iniciativa,
+                                      "Medio", @medio,
+                                      "IsTest", @IsTest,
+                                      "periodo_futuro", @periodo_futuro,
+                                      "Universidad_Graduacion", @universidad_graduacion,
+                                      "a_os_graduacion", @anios_profesional,
+                                      "area_de_interes_pivote", @carrera,
+                                      "periodo_de_interes_pivote", @periodo,
+                                      "campus_de_interes_pivote", @campus,
+                                      "programa_de_interes_pivote", @programa,
+                                      "Programa_ClaveBanner", @programaClave,
+                                      "Periodo_Clave", @periodoClave,
+                                      "Sede_Clave", @sedeClave,
+                                      "Agrupacion_Clave", @agrupacionClave,
+                                      "Tipo_Formulario", @Tipo_Formulario,
+                                      "Puesto", @puesto,
+                                      "Empresa", @empresa,
+                                      "Estudiante_SexoLegal", @sexo_legal,
+                                      "aos_laborados_en_gerencia_alta_o_superior", @aos_laborados_en_gerencia_alta_o_superior,
+                                      "Rol_Empresarial", @Rol_Empresarial,
+                                      "Empresa_Institucionalizacion", @Empresa_Institucionalizacion,
+                                      "Tamano_Empresa", @Tamano_Empresa,
+                                      "Medio_Contacto", @Medio_Contacto,
+                                      "Evento_Name", @Evento_Name,
+                                      "Evento_EventKey", @Evento_EventKey
+                                    )
+          endif
+            /* Ejecutar automatizcion: OptIn WhatsApp y evaluacion del Journey */
+]%%
+        %%=ContentBlockbyId(19617)=%%
+%%[
+    
+    else 
+    set @deDestino = @deHistorialDeCampania
+        set @Row_PersonaComunicar = Row(@Rows_PersonaComunicar, 1)
+        set @Validado = Field(@Row_PersonaComunicar, "Validado")
+        /* Generar historial de campaña */
+        if @submitBool == "True" then
+          set @upsertCount = UpsertData(@deDestino, 2, 
+                                      "Id_PersonaComunicar", @Id_PersonaComunicar,
+                                      "Submit_Date", @Submit_Date,
+                                      "perfil", @perfilResponsableLegal,
+                                      "Horario_Contacto", @Horario_Contacto,
+                                      "aviso_privacidad", @aviso_privacidad,
+                                      "comunicacion_whatsapp", @comunicacion_whatsapp,
+                                      "Estudiante_Id", @Estudiante_Id,
+                                      "Estudiante_FirstName", @Estudiante_FirstName,
+                                      "Estudiante_ApellidoPaterno", @Estudiante_ApellidoPaterno,
+                                      "Estudiante_ApellidoMaterno", @Estudiante_ApellidoMaterno,
+                                      "Estudiante_FechaNacimiento", @Estudiante_FechaNacimiento,
+                                      "Estudiante_FechaNacimiento_Formatted", @Estudiante_FechaNacimiento,
+                                      "Estudiante_Email", @Estudiante_Email,
+                                      "Estudiante_Phone", @Estudiante_Phone,
+                                      "Estudiante_Locale", @Estudiante_Locale,
+                                      "Estudiante_CodePhone", @Estudiante_CodePhone,
+                                      "nivel_de_ingles", @nivelIngles,
+                                      "utm_campaign", @utm_campaign,
+                                      "utm_source", @utm_source,
+                                      "utm_term", @utm_term,
+                                      "utm_content", @utm_content,
+                                      "adm_url_landing__c", @adm_url_landing__c,
+                                      "business_unit__pivote_", @business_unit__pivote_,
+                                      "adm_wl_clave_origen__c", @adm_wl_clave_origen__c,
+                                      "adm_wl_clave_estatus__c", @adm_wl_clave_estatus__c,
+                                      "adm_sistema_origen__c", @adm_sistema_origen__c,
+                                      "adm_modalidad__c", @adm_modalidad__c,
+                                      "adm_wl_clave_nivel__c", @adm_wl_clave_nivel__c,
+                                      "Origen", @Origen,
+                                      "Validado", @Validado,
+                                      "OptOutStatusID", @OptOutStatusID,
+                                      "utm_cve_periodo_iniciativa", @utm_cve_periodo_iniciativa,
+                                      "utm_medium", @utm_medium,
+                                      "utm_cve_sede_iniciativa", @utm_cve_sede_iniciativa,
+                                      "Medio", @medio,
+                                      "IsTest", @IsTest,
+                                      "periodo_futuro", @periodo_futuro,
+                                      "Universidad_Graduacion", @universidad_graduacion,
+                                      "a_os_graduacion", @anios_profesional,
+                                      "area_de_interes_pivote", @carrera,
+                                      "periodo_de_interes_pivote", @periodo,
+                                      "campus_de_interes_pivote", @campus,
+                                      "programa_de_interes_pivote", @programa,
+                                      "Programa_ClaveBanner", @programaClave,
+                                      "Periodo_Clave", @periodoClave,
+                                      "Sede_Clave", @sedeClave,
+                                      "Agrupacion_Clave", @agrupacionClave,
+                                      "Tipo_Formulario", @Tipo_Formulario,
+                                      "Puesto", @puesto,
+                                      "Empresa", @empresa,
+                                      "Estudiante_SexoLegal", @sexo_legal,
+                                      "aos_laborados_en_gerencia_alta_o_superior", @aos_laborados_en_gerencia_alta_o_superior,
+                                      "Rol_Empresarial", @Rol_Empresarial,
+                                      "Empresa_Institucionalizacion", @Empresa_Institucionalizacion,
+                                      "Tamano_Empresa", @Tamano_Empresa,
+                                      "Medio_Contacto", @Medio_Contacto,
+                                      "valida_datos_submit", @submitBool
+                                    )
+          else
+            set @upsertCount = UpsertData(@deDestino, 2, 
+                                      "Id_PersonaComunicar", @Id_PersonaComunicar,
+                                      "Submit_Date", @Submit_Date, 
+                                      "perfil", @perfilResponsableLegal,
+                                      "Horario_Contacto", @Horario_Contacto,
+                                      "aviso_privacidad", @aviso_privacidad,
+                                      "comunicacion_whatsapp", @comunicacion_whatsapp,
+                                      "Estudiante_Id", @Estudiante_Id,
+                                      "Estudiante_FirstName", @Estudiante_FirstName,
+                                      "Estudiante_ApellidoPaterno", @Estudiante_ApellidoPaterno,
+                                      "Estudiante_ApellidoMaterno", @Estudiante_ApellidoMaterno,
+                                      "Estudiante_FechaNacimiento", @Estudiante_FechaNacimiento,
+                                      "Estudiante_FechaNacimiento_Formatted", @Estudiante_FechaNacimiento,
+                                      "Estudiante_Email", @Estudiante_Email,
+                                      "Estudiante_Phone", @Estudiante_Phone,
+                                      "Estudiante_Locale", @Estudiante_Locale,
+                                      "Estudiante_CodePhone", @Estudiante_CodePhone,
+                                      "nivel_de_ingles", @nivelIngles,
+                                      "utm_campaign", @utm_campaign,
+                                      "utm_source", @utm_source,
+                                      "utm_term", @utm_term,
+                                      "utm_content", @utm_content,
+                                      "adm_url_landing__c", @adm_url_landing__c,
+                                      "business_unit__pivote_", @business_unit__pivote_,
+                                      "adm_wl_clave_origen__c", @adm_wl_clave_origen__c,
+                                      "adm_wl_clave_estatus__c", @adm_wl_clave_estatus__c,
+                                      "adm_sistema_origen__c", @adm_sistema_origen__c,
+                                      "adm_modalidad__c", @adm_modalidad__c,
+                                      "adm_wl_clave_nivel__c", @adm_wl_clave_nivel__c,
+                                      "Origen", @Origen,
+                                      "Validado", @Validado,
+                                      "OptOutStatusID", @OptOutStatusID,
+                                      "utm_cve_periodo_iniciativa", @utm_cve_periodo_iniciativa,
+                                      "utm_medium", @utm_medium,
+                                      "utm_cve_sede_iniciativa", @utm_cve_sede_iniciativa,
+                                      "Medio", @medio,
+                                      "IsTest", @IsTest,
+                                      "periodo_futuro", @periodo_futuro,
+                                      "Universidad_Graduacion", @universidad_graduacion,
+                                      "a_os_graduacion", @anios_profesional,
+                                      "area_de_interes_pivote", @carrera,
+                                      "periodo_de_interes_pivote", @periodo,
+                                      "campus_de_interes_pivote", @campus,
+                                      "programa_de_interes_pivote", @programa,
+                                      "Programa_ClaveBanner", @programaClave,
+                                      "Periodo_Clave", @periodoClave,
+                                      "Sede_Clave", @sedeClave,
+                                      "Agrupacion_Clave", @agrupacionClave,
+                                      "Tipo_Formulario", @Tipo_Formulario,
+                                      "Puesto", @puesto,
+                                      "Empresa", @empresa,
+                                      "Estudiante_SexoLegal", @sexo_legal,
+                                      "aos_laborados_en_gerencia_alta_o_superior", @aos_laborados_en_gerencia_alta_o_superior,
+                                      "Rol_Empresarial", @Rol_Empresarial,
+                                      "Empresa_Institucionalizacion", @Empresa_Institucionalizacion,
+                                      "Tamano_Empresa", @Tamano_Empresa,
+                                      "Medio_Contacto", @Medio_Contacto,
+                                      "Evento_Name", @Evento_Name,
+                                      "Evento_EventKey", @Evento_EventKey
+                                    )
+          endif
+
+    endif
+
+
+   /* Definir la URL de redirección según el programa */
+   
+    IF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-gccad-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-gccad-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-esg-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-esg-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-wlo-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-wlo-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-sapecm-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-sapecm-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-amp-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-amp-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-lat-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-lat-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-fca-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-fca-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-fel-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-fel-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-hre-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-hre-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-smp-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-smp-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-cfe-fel-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-cfe-fel-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-jcc-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-jcc-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-egade-typ"
+     ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ee-cvfe-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ee-cvfe-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/posgrados-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/posgrados-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/posgrados-egade-cdmx" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/posgrados-egade-cdmx-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/posgrados-egade-mty" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/posgrados-egade-mty-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/mba-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/mba-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/mbao-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/mbao-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/ftmba-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ftmba-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/emba-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/emba-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/mbd-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/mbd-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/mbm-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/mbm-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/maf-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/maf-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/mafo-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/mafo-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/mmt-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/mmt-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/mgn-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/mgn-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/msb-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/msb-egade-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/form-contact" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/form-contact-typ"
+    ELSEIF @adm_url_landing__c == "https://egade-admisiones.tec.mx/form-evento-egade" THEN
+    SET @tyURL = "https://egade-admisiones.tec.mx/ty-eventos-egade"
+    ELSE
+    /* URL por defecto si no se encuentra coincidencia */
+    SET @tyURL = "https://egade-admisiones.tec.mx/valida-tus-datos-typ"
+    ENDIF
+    
+    Redirect(@tyURL)
+    
+   
+]%%
+<script runat = "server" >
+    }catch(error){
+        Write(Stringify(error));
+    }
+</script>
